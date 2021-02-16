@@ -1,4 +1,4 @@
-from .requests import Request
+from . import Request
 import requests
 import json
 from hentai.hentai import Format, Hentai

@@ -137,3 +137,7 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+test.py
+test.http
+setup.py
+run.py

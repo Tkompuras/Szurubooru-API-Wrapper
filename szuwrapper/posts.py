@@ -1,4 +1,4 @@
-from .requests import Request
+from . import Request
 import requests
 from json import dumps
 from urllib.parse import quote
