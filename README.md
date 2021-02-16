@@ -1,0 +1,1 @@
+# Szurubooru-API-Wrapper
