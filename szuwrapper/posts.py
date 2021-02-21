@@ -4,38 +4,82 @@ from json import dumps
 from urllib.parse import quote
 
 
-def get_posts_id(Request, query: str) -> list:
-        """
-        Returns a list containing the post ids corresponding to the query\n
+def get_posts_id(Request: object, query: str) -> tuple:
+    """Returns tuple of posts IDs returned from the specified query
 
-        Positional arguments:\n
-        query -- any supported query argument according to the Szurubooru API
-        """
-        initial_pos=0
-        limit=100
-        ids_list = []
+    Args:
+        Request (object): Request object
+        query (str): Specific query, '*' as placeholder is supported
 
+    Returns:
+        tuple: Tuple with the IDs
+    """
+
+    initial_pos=0
+    limit=100
+    ids_list = []
+
+    req = requests.get(f'{Request.api_url}/posts/?offset={initial_pos}&limit={limit}&query={quote(query)}', headers=Request.headers)
+    json_response = req.json()
+    while json_response['offset'] < json_response['total']:
+        for item in json_response['results']:
+            ids_list.append(item['id'])
+        initial_pos += 100
         req = requests.get(f'{Request.api_url}/posts/?offset={initial_pos}&limit={limit}&query={quote(query)}', headers=Request.headers)
         json_response = req.json()
-        while json_response['offset'] < json_response['total']:
-            for item in json_response['results']:
-                ids_list.append(item['id'])
-            initial_pos += 100
-            req = requests.get(f'{Request.api_url}/posts/?offset={initial_pos}&limit={limit}&query={quote(query)}', headers=Request.headers)
-            json_response = req.json()
-        else:
-            return ids_list
+    else:
+        return tuple(ids_list)
 
-def get_post(Request, post_id):
-        req = requests.get(f'{Request.api_url}/post/{post_id}', headers=Request.headers)
-        json_response = req.json()
-        return json_response
+def get_post(Request: object, post_id: int) -> dict:
+    """Returns info about a specific post from its ID
 
-def delete_post(Request, post_id):
-        version_request = requests.get(f'{Request.api_url}/post/{post_id}', headers=Request.headers)
-        json_response = version_request.json()
-        request_input = {
-            "version": json_response['version']
-        }
-        json_input = dumps(request_input)
-        req = requests.delete(f'{Request.api_url}/post/{post_id}', headers=Request.headers, data=json_input)
+    Args:
+        Request (object): Request object
+        post_id (int): The ID of the post
+
+    Returns:
+        dict: JSON response
+    """
+    req = requests.get(f'{Request.api_url}/post/{post_id}', headers=Request.headers)
+    return req.json()
+
+def delete_post(Request: object, post_id: int) -> None:
+    """Delete a post using its ID
+
+    Args:
+        Request (object): Request object
+        post_id (int): The post ID
+
+    Returns:
+        None
+    """
+    version_request = requests.get(f'{Request.api_url}/post/{post_id}', headers=Request.headers)
+    json_response = version_request.json()
+    request_body = {
+        "version": json_response['version']
+    }
+    req = requests.delete(f'{Request.api_url}/post/{post_id}', headers=Request.headers, data=dumps(request_body))
+    return None
+
+def upload_post(Request: object, tags: list, safety: str, file_path: str) -> dict:
+    """Upload a post
+
+    Args:
+        Request (object): Request post
+        tags (list): List of tags
+        safety (str): Safety tag. 'safe', 'sketchy', 'unsafe'
+        file_path (str): The file path of the file to be uploaded
+
+    Returns:
+        dict: JSON response
+    """
+    metadata = {
+        "tags": tags,
+        "safety": safety
+    }
+    multipart_form_data = {
+        'content': ('test.jpg', open(file_path, 'rb')),
+        'metadata': dumps(metadata),
+    }
+    req = requests.post(f'{Request.api_url}/posts', headers=Request.headers, files=multipart_form_data)
+    return req.json()

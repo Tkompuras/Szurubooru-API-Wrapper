@@ -141,3 +141,5 @@ test.py
 test.http
 setup.py
 run.py
+tests/
+pyproject.toml
